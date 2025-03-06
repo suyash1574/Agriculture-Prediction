@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.applications import VGG16
-from tensorflow.keras.layers import Dense, Flatten, Input, Concatenate
+from tensorflow.keras.layers import Dense, Flatten, Input, Concatenate, Dropout
 from tensorflow.keras.models import Model
 import pandas as pd
 import numpy as np
@@ -8,6 +8,7 @@ import cv2
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import logging
+import os  # Added to fix NameError
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +39,10 @@ yield_labels = tabular_df["Yield"].values
 yield_min, yield_max = yield_labels.min(), yield_labels.max()
 yield_labels = (yield_labels - yield_min) / (yield_max - yield_min) if yield_max > yield_min else yield_labels
 
-fert_labels = pd.get_dummies(np.random.randint(0, 3, num_samples)).values  # Placeholder
+# Replace random fert_labels with a placeholder (e.g., from tabular data if available)
+# For now, assume fertilization data is not available; comment out or remove if not needed
+# fert_labels = pd.get_dummies(tabular_df["Fertilization"].astype(int) if "Fertilization" in tabular_df else np.random.randint(0, 3, num_samples)).values
+fert_labels = np.zeros((num_samples, 3))  # Temporary placeholder; remove if not needed
 
 # Debug: Check label ranges
 print(f"crop_labels min/max: {crop_labels.min()}/{crop_labels.max()}")
@@ -134,13 +138,15 @@ base_model.trainable = False
 
 # Image branch
 x = Flatten()(base_model.output)
+x = Dropout(0.5)(x)  # Add dropout to prevent overfitting
 crop_output = Dense(len(np.unique(crop_labels)), activation="softmax", name="crop_type")(x)
 damage_output = Dense(1, activation="sigmoid", name="damage")(x)
 
 # Tabular branch
 tabular_input = Input(shape=(len(tabular_columns),))
 y = Dense(64, activation="relu")(tabular_input)
-yield_output = Dense(1, activation="linear", name="yield")(y)
+y = Dropout(0.5)(y)  # Add dropout to prevent overfitting
+yield_output = Dense(1, activation="sigmoid", name="yield")(y)  # Constrained to [0, 1]
 fert_output = Dense(3, activation="softmax", name="fertilization")(y)
 
 # Model
@@ -156,8 +162,8 @@ model.compile(
     loss_weights={
         "crop_type": 1.0,
         "damage": 1.0,
-        "yield": 0.01,  # Reduce weight to balance with other losses
-        "fertilization": 1.0
+        "yield": 1.0,
+        "fertilization": 1.0  # Keep balanced since fert_labels are placeholder
     },
     metrics={
         "crop_type": "accuracy",
@@ -171,7 +177,7 @@ model.compile(
 model.fit(
     train_dataset,
     validation_data=val_dataset,
-    epochs=10
+    epochs=5
 )
 
 # Save
