@@ -1,6 +1,13 @@
-from flask import Flask, render_template, request
+import sys
 import os
+from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
+
+# Add the project root directory (Agriculture Prediction) to sys.path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, project_root)  # Insert at the beginning to prioritize this path
+
+# Now import predict_image from src.predict
 from src.predict import predict_image
 
 app = Flask(__name__)
