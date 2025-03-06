@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agriculture Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Crop Leaf Analysis</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <input type="submit" value="Analyze">
+        </form>
+        {% if result %}
+        <div class="result">
+            <h2>Results</h2>
+            <p><strong>Crop Type:</strong> {{ result.crop_type }}</p>
+            <p><strong>Destruction Percentage:</strong> {{ result.destruction_percentage }}%</p>
+            <p><strong>Yield Prediction:</strong> {{ result.yield_prediction }} tons/ha</p>
+            <p><strong>Fertilization Required:</strong> {{ result.fertilization }}</p>
+            <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Image" class="uploaded-image">
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
