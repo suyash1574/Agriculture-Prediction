@@ -69,7 +69,6 @@ def index():
         logger.info(f"Attempting to save file to: {absolute_path}")
 
         try:
-            # Save the file with overwrite protection
             counter = 1
             base_name = os.path.splitext(filename)[0]
             extension = os.path.splitext(filename)[1]
@@ -127,7 +126,6 @@ def download_report(filename):
         styles = getSampleStyleSheet()
         elements = []
 
-        # Add title
         title_style = ParagraphStyle(
             name='TitleStyle',
             parent=styles['Heading1'],
@@ -137,7 +135,6 @@ def download_report(filename):
         elements.append(Paragraph("Crop Leaf Analysis Report", title_style))
         elements.append(Spacer(1, 12))
 
-        # Add uploaded image
         try:
             img = Image(file_path, width=200, height=200)
             img.hAlign = 'CENTER'
@@ -148,7 +145,6 @@ def download_report(filename):
             logger.error(f"Failed to add image to report: {str(e)}")
             elements.append(Paragraph(f"Image not available: {str(e)}", styles['Normal']))
 
-        # Add prediction details
         normal_style = styles['Normal']
         elements.append(Paragraph(f"Filename: {filename}", normal_style))
         elements.append(Paragraph(f"Crop Type: {result['crop_type']}", normal_style))
@@ -157,13 +153,12 @@ def download_report(filename):
         elements.append(Paragraph(f"Yield Prediction: {result['yield_prediction']} tons/ha", normal_style))
         elements.append(Spacer(1, 12))
 
-        # Add footer
         footer_style = ParagraphStyle(
             name='FooterStyle',
             parent=styles['Normal'],
             textColor=colors.gray
         )
-        elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style))
+        elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:M:S')}", footer_style))
 
         doc.build(elements)
         pdf_buffer.seek(0)

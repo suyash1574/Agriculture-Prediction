@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #87CEEB; /* Light sky blue background */
-            color: #2f4f2f; /* Dark olive green for text */
+            background-color: #87CEEB;
+            color: #2f4f2f;
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
@@ -19,7 +19,6 @@
             display: flex;
             flex-direction: column;
         }
-        /* Background image for the entire page */
         body::before {
             content: "";
             position: fixed;
@@ -27,7 +26,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1505576399279-565b52d4ac71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80'); /* Farm field image */
+            background-image: url('https://images.unsplash.com/photo-1505576399279-565b52d4ac71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -108,7 +107,7 @@
             align-items: center;
         }
         .home-nav-item .nav-link::before {
-            content: '🏠'; /* Home icon on the left */
+            content: '🏠';
             margin-right: 8px;
             font-size: 1.1rem;
             color: #8B4513;
@@ -118,7 +117,7 @@
             color: #6B4226;
         }
         .dropdown-menu {
-            display: none; /* Hidden by default */
+            display: none;
             background: #ffffff;
             border: 1px solid #8B4513;
             border-radius: 8px;
@@ -132,7 +131,7 @@
             animation: fadeIn 0.2s ease-in;
         }
         .home-nav-item:hover .dropdown-menu {
-            display: block; /* Show on hover */
+            display: block;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
@@ -292,7 +291,7 @@
             .nav-link { margin: 0 8px; padding: 6px 10px; font-size: 0.9rem; }
             .home-nav-item .nav-link::before { font-size: 1rem; }
             .analyze-button { padding: 8px 20px; font-size: 0.9rem; }
-            .dropdown-menu { display: none; } /* Ensure hover works on mobile via click */
+            .dropdown-menu { display: none; }
         }
     </style>
 </head>
@@ -336,6 +335,10 @@
                 <h2>Upload Your Crop Image</h2>
                 <form method="POST" enctype="multipart/form-data">
                     <input type="file" name="image" accept="image/png, image/jpeg, image/jpg" class="form-control mb-3" required>
+                    <div class="form-group">
+                        <label for="rainfall">Rainfall (mm): </label>
+                        <input type="number" name="rainfall" id="rainfall" class="form-control" step="0.1" value="0.0" min="0" placeholder="Enter rainfall in mm">
+                    </div>
                     <button type="submit" class="analyze-button">Analyze</button>
                 </form>
             </div>
@@ -345,10 +348,10 @@
                 <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Image" onerror="this.onerror=null; this.src='{{ url_for('static', filename='uploads/placeholder.jpg') }}';">
                 {% if result %}
                     <p class="crop-type">Crop Type: {{ result['crop_type'] }}</p>
-                    <p class="fertilization">Fertilization Required: {{ result['fertilization_required'] }}</p>
-                    <p class="destruction-percentage">Destruction Percentage: {{ result['destruction_percentage'] }}</p>
+                    <p class="fertilization">Fertilization Required: {{ result['fertilization_required'] }} %</p>
+                    <p class="destruction-percentage">Destruction Percentage: {{ result['destruction_percentage'] }}%</p>
                     <p class="yield-prediction">Yield Prediction: {{ result['yield_prediction'] }} tons/ha</p>
-                    <a href="{{ url_for('download_report', filename=filename) }}" class="download-report-button">Download Report</a>
+                    <a href="{{ url_for('download_report', filename=filename) }}?rainfall={{ request.form.get('rainfall', 0.0) }}" class="download-report-button">Download Report</a>
                 {% else %}
                     <p class="error-message">No prediction available. Check the logs for errors.</p>
                 {% endif %}
@@ -363,7 +366,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and jQuery for dropdown functionality -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

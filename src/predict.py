@@ -18,7 +18,7 @@ except Exception as e:
     logger.error(f"Failed to load model: {str(e)}")
     model = None
 
-# Load the scaler
+# Load the scaler and scaling parameters
 try:
     with open('models/scaler.pkl', 'rb') as f:
         scaler = pickle.load(f)
@@ -27,25 +27,39 @@ except Exception as e:
     logger.error(f"Failed to load scaler: {str(e)}")
     scaler = None
 
-crop_types = ['Wheat', 'Corn', 'Rice', 'Soybean']  # Adjust based on your dataset
+try:
+    with open('models/scaling_params.pkl', 'rb') as f:
+        scaling_params = pickle.load(f)
+    YIELD_MIN = scaling_params['yield_min']
+    YIELD_MAX = scaling_params['yield_max']
+    FERTILIZATION_MIN = scaling_params['fert_min']
+    FERTILIZATION_MAX = scaling_params['fert_max']
+    logger.info(f"Loaded scaling params: yield_min={YIELD_MIN}, yield_max={YIELD_MAX}, fert_min={FERTILIZATION_MIN}, fert_max={FERTILIZATION_MAX}")
+except Exception as e:
+    logger.error(f"Failed to load scaling params: {str(e)}")
+    YIELD_MIN = 0.0
+    YIELD_MAX = 10.0  # Default to a realistic range for now
+    FERTILIZATION_MIN = 0.0
+    FERTILIZATION_MAX = 100.0
+    logger.warning("Using default scaling params due to load failure")
 
-# Min/max values for denormalization (update after running train_model.py)
-YIELD_MIN = 0.0  # Temporary, replace with actual min from training logs
-YIELD_MAX = 1.0  # Temporary, replace with actual max from training logs
-FERTILIZATION_MIN = 0.0
-FERTILIZATION_MAX = 100.0
+# Validate scaling params
+if YIELD_MAX - YIELD_MIN > 1000 or YIELD_MAX < YIELD_MIN:
+    logger.warning(f"Invalid yield range detected: YIELD_MIN={YIELD_MIN}, YIELD_MAX={YIELD_MAX}. Using default values.")
+    YIELD_MIN = 0.0
+    YIELD_MAX = 10.0
+
+crop_types = ['Wheat', 'Corn', 'Rice', 'Soybean']  # Adjust based on your dataset
 
 def preprocess_image(image_path, rainfall_value=0.0):
     """
     Preprocess the image and tabular data (Rainfall) for prediction.
     """
     try:
-        # Load and preprocess the image
         img = load_img(image_path, target_size=(224, 224))
         img_array = img_to_array(img) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        # Prepare tabular data with the provided rainfall value
         tabular_data = np.array([[rainfall_value]], dtype=np.float32)
         if scaler is not None:
             tabular_data = scaler.transform(tabular_data)
@@ -70,21 +84,17 @@ def predict_crop(image_path, rainfall_value=0.0):
         return {'error': 'Failed to preprocess image'}
 
     try:
-        # Make prediction
         predictions = model.predict([img_array, tabular_data])
         logger.info(f"Raw predictions: {predictions}")
 
-        # Process predictions
         crop_type_pred = np.argmax(predictions[0], axis=1)[0]
-        fertilization_pred_normalized = predictions[1][0][0]  # Normalized [0, 1]
-        damage_pred = predictions[2][0][0] * 100  # Convert to percentage
-        yield_pred_normalized = predictions[3][0][0]  # Normalized [0, 1]
+        fertilization_pred_normalized = predictions[1][0][0]
+        damage_pred = predictions[2][0][0] * 100
+        yield_pred_normalized = predictions[3][0][0]
 
-        # Denormalize predictions
         fertilization_pred = fertilization_pred_normalized * (FERTILIZATION_MAX - FERTILIZATION_MIN) + FERTILIZATION_MIN
         yield_pred = yield_pred_normalized * (YIELD_MAX - YIELD_MIN) + YIELD_MIN
 
-        # Log normalized and denormalized values for debugging
         logger.info(f"Normalized yield prediction: {yield_pred_normalized}")
         logger.info(f"Denormalized yield prediction: {yield_pred}")
 
