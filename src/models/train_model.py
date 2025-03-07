@@ -100,9 +100,14 @@ train_labels_dataset = tf.data.Dataset.from_tensor_slices({
     "damage": damage_labels_train,
     "yield": yield_labels_train
 })
-train_dataset = tf.data.Dataset.zip((train_image_dataset, train_tabular_dataset), train_labels_dataset)
+
+# Zip images and tabular data together as the input
+inputs_dataset = tf.data.Dataset.zip((train_image_dataset, train_tabular_dataset))
+# Combine inputs with labels
+train_dataset = tf.data.Dataset.zip((inputs_dataset, train_labels_dataset))
+# Apply augmentation and ensure correct structure
 train_dataset = train_dataset.map(
-    lambda x, y: (tf.image.random_flip_left_right(x[0]), (x[1], y)),
+    lambda x, y: ((tf.image.random_flip_left_right(x[0]), x[1]), y),
     num_parallel_calls=tf.data.AUTOTUNE
 ).batch(32).prefetch(tf.data.AUTOTUNE)
 
@@ -115,7 +120,11 @@ val_labels_dataset = tf.data.Dataset.from_tensor_slices({
     "damage": damage_labels_val,
     "yield": yield_labels_val
 })
-val_dataset = tf.data.Dataset.zip((val_image_dataset, val_tabular_dataset), val_labels_dataset)
+
+# Zip images and tabular data together as the input
+val_inputs_dataset = tf.data.Dataset.zip((val_image_dataset, val_tabular_dataset))
+# Combine inputs with labels
+val_dataset = tf.data.Dataset.zip((val_inputs_dataset, val_labels_dataset))
 val_dataset = val_dataset.batch(32).prefetch(tf.data.AUTOTUNE)
 
 # Debug: Check dataset sizes
@@ -136,14 +145,14 @@ damage_output = Dense(1, activation="sigmoid", name="damage")(x)
 
 # Tabular branch
 tabular_input = Input(shape=(len(tabular_columns),))
-y = Dense(128, activation="relu")(tabular_input)  # Increased units for more capacity
+y = Dense(128, activation="relu")(tabular_input)
 y = Dropout(0.5)(y)
 yield_output = Dense(1, activation="sigmoid", name="yield")(y)
 
 # Model
 model = Model(inputs=[base_model.input, tabular_input], outputs=[crop_output, damage_output, yield_output])
 model.compile(
-    optimizer=Adam(learning_rate=0.0001),  # Lower learning rate
+    optimizer=Adam(learning_rate=0.0001),
     loss={
         "crop_type": "sparse_categorical_crossentropy",
         "damage": "mse",
@@ -165,7 +174,7 @@ model.compile(
 model.fit(
     train_dataset,
     validation_data=val_dataset,
-    epochs=20  # Increased to 20 epochs
+    epochs=20
 )
 
 # Save
