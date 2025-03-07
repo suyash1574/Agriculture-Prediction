@@ -89,3 +89,5 @@ target/
 .mypy_cache/
 venv/
 /data/
+/uploads/
+try.html
